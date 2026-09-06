@@ -22,14 +22,31 @@ def _buy_and_fill(tmp_settings, cfg, conn, fake_client, price="0.60", qty=2):
     return broker, market
 
 
+def _legacy(cfg):
+    c = cfg.model_copy(deep=True)
+    c.exits.take_profit_cents = Decimal("0.08")
+    c.exits.stop_loss_enabled = True
+    return c
+
+
 def test_exit_levels(cfg):
     tp, sl = exit_levels(cfg, Decimal("0.60"))
-    assert tp == Decimal("0.68") and sl == Decimal("0.40")
-    tp2, _ = exit_levels(cfg, Decimal("0.92"))
-    assert tp2 == cfg.exits.take_profit_price
+    assert tp == cfg.exits.take_profit_price and sl is None
+    tp2, sl2 = exit_levels(_legacy(cfg), Decimal("0.60"))
+    assert tp2 == Decimal("0.68") and sl2 == Decimal("0.40")
+
+
+def test_default_config_holds_through_drops(tmp_settings, cfg, conn, fake_client):
+    broker, market = _buy_and_fill(tmp_settings, cfg, conn, fake_client)
+    fake_client.bids = [("0.38", "100")]
+    fake_client.asks = [("0.40", "100")]
+    for _ in range(3):
+        assert manage_positions(tmp_settings, cfg, conn, fake_client, broker) == []
+    assert one(conn, "SELECT status FROM positions WHERE slug = 'test-market'")["status"] == "open"
 
 
 def test_take_profit_sells(tmp_settings, cfg, conn, fake_client):
+    cfg = _legacy(cfg)
     broker, market = _buy_and_fill(tmp_settings, cfg, conn, fake_client)
     cash_after_buy = broker.cash()
     fake_client.bids = [("0.70", "100")]
@@ -43,6 +60,7 @@ def test_take_profit_sells(tmp_settings, cfg, conn, fake_client):
 
 
 def test_stop_loss_sells(tmp_settings, cfg, conn, fake_client):
+    cfg = _legacy(cfg)
     broker, market = _buy_and_fill(tmp_settings, cfg, conn, fake_client)
     fake_client.bids = [("0.38", "100")]
     fake_client.asks = [("0.40", "100")]
@@ -57,6 +75,7 @@ def test_stop_loss_sells(tmp_settings, cfg, conn, fake_client):
 
 
 def test_no_action_in_between(tmp_settings, cfg, conn, fake_client):
+    cfg = _legacy(cfg)
     broker, market = _buy_and_fill(tmp_settings, cfg, conn, fake_client)
     fake_client.bids = [("0.64", "100")]
     fake_client.asks = [("0.66", "100")]
@@ -76,6 +95,7 @@ def test_frozen_during_game(tmp_settings, cfg, conn, fake_client):
 
 
 def test_thin_book_blocks_selling(tmp_settings, cfg, conn, fake_client):
+    cfg = _legacy(cfg)
     broker, market = _buy_and_fill(tmp_settings, cfg, conn, fake_client)
     fake_client.bids = [("0.30", "100")]
     fake_client.asks = [("0.70", "100")]

@@ -46,7 +46,7 @@ def test_favorite_target_and_caps(cfg):
     assert "portfolio_target_reached" in decide_favorite(cfg, pick, quote, account, control, now, {}, {}).nogo_reasons
     account.exposure = Decimal("0")
     assert "event_cap" in decide_favorite(cfg, pick, quote, account, control, now, {}, {"q": 1}).nogo_reasons
-    assert "category_share_cap" in decide_favorite(cfg, pick, quote, account, control, now, {"politics": 3}, {}).nogo_reasons
+    assert "category_share_cap" in decide_favorite(cfg, pick, quote, account, control, now, {"politics": 5}, {}).nogo_reasons
     account.held_slugs = {"m"}
     assert "already_holding" in decide_favorite(cfg, pick, quote, account, control, now, {}, {}).nogo_reasons
 

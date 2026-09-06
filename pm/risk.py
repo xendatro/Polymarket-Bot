@@ -10,10 +10,10 @@ from pm.models import Account, ControlState
 from pm.util import ONE, ZERO, D, clamp, round_to_tick
 
 ABS_MAX_TRADE_PCT_EQUITY = Decimal("0.5")
-ABS_MAX_OPEN_POSITIONS = 8
+ABS_MAX_OPEN_POSITIONS = 12
 ABS_MAX_PRICE = Decimal("0.97")
 ABS_MAX_QTY = 50
-ABS_MAX_ORDERS_PER_DAY = 12
+ABS_MAX_ORDERS_PER_DAY = 20
 ABS_MIN_EQUITY_TO_TRADE = Decimal("1.00")
 MAKER_REBATE_COEF = Decimal("0.0125")
 ET = ZoneInfo("America/New_York")

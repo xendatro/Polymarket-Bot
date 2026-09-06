@@ -63,7 +63,7 @@ def fmt_status(s: dict) -> str:
         lines.append(f"**Last run:** {lr['status']} at {lr['started_at']}")
     lines.append("**Open positions:** " + ("none" if not s["positions"] else ""))
     for p in s["positions"]:
-        lines.append(f"- {p['slug']}: {p['qty']} {p['side']} bought at {cents(p['avg_cost'])}, now {cents(p['mark_price']) if p['mark_price'] else '-'} ({signed_money(p['unrealized_pnl']) if p['unrealized_pnl'] else '-'}), sells at {cents(p.get('take_profit_price'))} or {cents(p.get('stop_loss_price'))}")
+        lines.append(f"- {p['slug']}: {p['qty']} {p['side']} bought at {cents(p['avg_cost'])}, now {cents(p['mark_price']) if p['mark_price'] else '-'} ({signed_money(p['unrealized_pnl']) if p['unrealized_pnl'] else '-'}), sells early at {cents(p.get('take_profit_price'))}" + (f", stop {cents(p.get('stop_loss_price'))}" if p.get('stop_loss_price') else ''))
     lines.append("**Open orders:** " + ("none" if not s["open_orders"] else ""))
     for o in s["open_orders"]:
         lines.append(f"- {o['slug']}: buy {o['qty']} {o['side']} at {cents(o['limit_price'])}, {o['filled_qty']} filled, {status_word(o['status'])}, expires {o['expires_at'] or '-'}")

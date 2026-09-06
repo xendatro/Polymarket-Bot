@@ -125,7 +125,7 @@ def build_positions_card(conn: sqlite3.Connection, cfg: Config, settings: Settin
     for p in all_rows(conn, "SELECT * FROM positions WHERE status = 'open' AND qty > 0 ORDER BY opened_at"):
         q, t, et = _market_bits(conn, p["slug"])
         entry = D(p["avg_cost"]) or ZERO
-        status_line = "- **Status:** filled" + (f", sells at {cents(p['take_profit_price'])} profit / {cents(p['stop_loss_price'])} stop" if p["take_profit_price"] else "")
+        status_line = "- **Status:** filled" + (f", sells early at {cents(p['take_profit_price'])}" if p["take_profit_price"] else "") + (f", stop at {cents(p['stop_loss_price'])}" if p["stop_loss_price"] else "")
         if p["mark_price"]:
             status_line += f" · now {cents(p['mark_price'])} ({signed_money((D(p['mark_price']) - entry) * int(p['qty']))})"
         blocks.append("\n".join(_trade_lines(trade_name(q, t, p["side"]), et, tz, int(p["qty"]), entry, status_line)))

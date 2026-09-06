@@ -12,9 +12,9 @@ from pm.scan import fetch_quote, market_from_db, record_snapshot
 from pm.util import ZERO, D, dstr, iso, now_utc
 
 
-def exit_levels(cfg: Config, entry: Decimal) -> tuple[Decimal, Decimal]:
-    take_profit = min(entry + cfg.exits.take_profit_cents, cfg.exits.take_profit_price)
-    stop_loss = entry - cfg.exits.stop_loss_cents
+def exit_levels(cfg: Config, entry: Decimal) -> tuple[Decimal, Decimal | None]:
+    take_profit = min(entry + cfg.exits.take_profit_cents, cfg.exits.take_profit_price) if cfg.exits.take_profit_cents > 0 else cfg.exits.take_profit_price
+    stop_loss = (entry - cfg.exits.stop_loss_cents) if cfg.exits.stop_loss_enabled else None
     return take_profit, stop_loss
 
 
@@ -52,7 +52,7 @@ def manage_positions(settings: Settings, cfg: Config, conn: sqlite3.Connection, 
         reason = None
         if bid >= take_profit:
             reason = "take_profit"
-        elif bid <= stop_loss:
+        elif stop_loss is not None and bid <= stop_loss:
             hits += 1
             update(conn, "positions", {"slug": slug, "side": side}, {"stop_hits": hits})
             if hits >= cfg.exits.stop_loss_confirmations:
@@ -62,7 +62,7 @@ def manage_positions(settings: Settings, cfg: Config, conn: sqlite3.Connection, 
                 update(conn, "positions", {"slug": slug, "side": side}, {"stop_hits": 0})
         if reason is None:
             continue
-        text = f"{'Take profit' if reason == 'take_profit' else 'Stop loss'}: bought at {dstr(entry)}, bid now {dstr(bid)} (target {dstr(take_profit)}, stop {dstr(stop_loss)})"
+        text = f"{'Take profit' if reason == 'take_profit' else 'Stop loss'}: bought at {dstr(entry)}, bid now {dstr(bid)} (target {dstr(take_profit)}, stop {dstr(stop_loss) if stop_loss is not None else 'off'})"
         pr = exit_position(settings, cfg, conn, broker, slug, side, market, q, None, f"manage_{reason}", text)
         log_event(conn, "manage", "info", reason, "positions", slug, {"side": side, "entry": dstr(entry), "bid": dstr(bid), "status": pr.status, "reason": pr.reason})
         events.append({"type": reason, "slug": slug, "side": side, "qty": int(p["qty"]), "price": bid, "entry": entry, "status": pr.status, "reason": pr.reason, "title": market.title, "question": market.question, "pnl": (bid - entry) * Decimal(int(p["qty"]))})

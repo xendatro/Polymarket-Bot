@@ -48,8 +48,9 @@ class PortfolioCfg(BaseModel):
 
 
 class ExitsCfg(BaseModel):
-    take_profit_cents: Decimal = Decimal("0.08")
+    take_profit_cents: Decimal = Decimal("0")
     take_profit_price: Decimal = Decimal("0.95")
+    stop_loss_enabled: bool = False
     stop_loss_cents: Decimal = Decimal("0.20")
     freeze_before_game_minutes: int = 60
     max_spread_to_act: Decimal = Decimal("0.06")
@@ -103,9 +104,9 @@ class Config(BaseModel):
     poll_seconds: int = 60
     daily_report_time_local: str = "00:05"
     display_timezone: str = "America/New_York"
-    max_new_orders_per_run: int = 5
-    max_new_orders_per_day: int = 10
-    max_open_positions: int = 5
+    max_new_orders_per_run: int = 6
+    max_new_orders_per_day: int = 16
+    max_open_positions: int = 8
     never_buy_above: Decimal = Decimal("0.97")
     portfolio: PortfolioCfg = PortfolioCfg()
     favorites: FavoritesCfg = FavoritesCfg()
