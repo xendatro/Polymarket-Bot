@@ -146,6 +146,8 @@ def reason_word(code: str) -> str:
         text = f"market type '{body.rsplit('_', 1)[1]}' is excluded"
     elif body.startswith("market_status_"):
         text = f"market is not open ({body.split('_', 2)[2]})"
+    elif body.startswith("exchange_state_"):
+        text = f"exchange has trading paused ({body.split('_', 2)[2]})"
     elif body.startswith("book_state_"):
         text = f"order book is not open ({body.split('_', 2)[2]})"
     elif body.startswith("paused_"):

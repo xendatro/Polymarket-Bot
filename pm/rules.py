@@ -142,6 +142,8 @@ def decide_favorite(cfg: Config, p: Pick, quote: Quote, account: Account, contro
         reasons.append("open_interest_low")
     if m.frozen_at(now, cfg.exits.freeze_before_game_minutes):
         reasons.append("game_imminent")
+    if quote.state and quote.state != "MARKET_STATE_OPEN":
+        reasons.append(f"exchange_state_{quote.state.replace('MARKET_STATE_', '').lower()}")
     if m.slug in account.held_slugs:
         reasons.append("already_holding")
     if m.slug in account.open_order_slugs:

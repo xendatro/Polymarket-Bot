@@ -154,6 +154,8 @@ class Runner:
             event_counts[event_key(mk)] = event_counts.get(event_key(mk), 0) + 1
         placed = 0
         n_dec = 0
+        halted = 0
+        set_control(self.conn, "exchange_state", "open")
         for p in picks:
             if placed >= self.cfg.max_new_orders_per_run:
                 break
@@ -170,6 +172,12 @@ class Runner:
             n_dec += 1
             summary["decisions"].append({"slug": d.slug, "side": d.side, "price": dstr(d.proposed_price), "qty": d.proposed_qty, "go": d.go, "nogo": d.nogo_reasons, "score": dstr(p.score, 4)})
             if not d.go:
+                if any(x.startswith("exchange_state_") for x in d.nogo_reasons):
+                    halted += 1
+                    if halted >= 3:
+                        set_control(self.conn, "exchange_state", q.state or "unknown")
+                        summary["warnings"].append(f"exchange trading paused ({q.state})")
+                        break
                 budget_left = self.cfg.portfolio.invest_target_pct * account.total - account.invested
                 if "portfolio_target_reached" in d.nogo_reasons or "max_open_positions" in d.nogo_reasons or "trading_disabled" in d.nogo_reasons or budget_left < self.cfg.favorites.price_min:
                     break

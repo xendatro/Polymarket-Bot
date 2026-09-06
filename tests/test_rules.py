@@ -59,3 +59,10 @@ def test_favorite_game_freeze(cfg):
     market.game_start_time = now + timedelta(hours=2)
     d = decide_favorite(cfg, pick, quote, account, control, now, {}, {})
     assert d.go and d.expires_at <= market.game_start_time
+
+
+def test_halted_exchange_blocks(cfg):
+    now, market, quote, pick, account, control = _setup(cfg)
+    quote.state = "MARKET_STATE_HALTED"
+    d = decide_favorite(cfg, pick, quote, account, control, now, {}, {})
+    assert not d.go and "exchange_state_halted" in d.nogo_reasons

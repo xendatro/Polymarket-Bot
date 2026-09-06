@@ -107,7 +107,8 @@ def build_trade_report(conn: sqlite3.Connection, cfg: Config, settings: Settings
         sold_blocks.append(b)
         received += p
         profit += pr
-    head = [f"**Time:** {local_fmt(now, tz)}", f"**Bought:** {len(buys)} bet{'s' if len(buys) != 1 else ''} ({money(spent)})", f"**Sold:** {len(sold_blocks)} bet{'s' if len(sold_blocks) != 1 else ''} ({money(received)}, {signed_money(profit)} profit)"]
+    state = get_control(conn, "exchange_state", "open")
+    head = [f"**Time:** {local_fmt(now, tz)}"] + ([f"**Exchange:** trading paused ({state.replace('MARKET_STATE_', '').lower()})"] if state not in ("", "open", "MARKET_STATE_OPEN") else []) + [f"**Bought:** {len(buys)} bet{'s' if len(buys) != 1 else ''} ({money(spent)})", f"**Sold:** {len(sold_blocks)} bet{'s' if len(sold_blocks) != 1 else ''} ({money(received)}, {signed_money(profit)} profit)"]
     parts = ["\n".join(head)]
     if bought_blocks:
         parts.append("**[BOUGHT]**\n\n" + "\n\n".join(bought_blocks))
