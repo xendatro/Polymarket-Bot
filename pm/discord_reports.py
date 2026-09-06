@@ -41,19 +41,24 @@ def _market_bits(conn: sqlite3.Connection, slug: str) -> tuple[str, str, datetim
     return m.question, m.title, m.event_time
 
 
+def _trade_lines(name: str, et, tz: str, qty: int, price: Decimal, status_line: str) -> list[str]:
+    cost = price * qty
+    return [f"**{name}**", f"- **End time:** {local_fmt(et, tz)}", f"- **Bought:** {qty} contracts @ {cents(price)} ({money(cost)})", f"- **If it wins:** {signed_money((ONE - price) * qty)}", f"- **If it loses:** {signed_money(-cost)}", status_line]
+
+
+def _order_status_line(o, tz: str) -> str:
+    if o["status"] == "filled":
+        return "- **Status:** filled"
+    if o["status"] in ("open", "partially_filled", "submitted"):
+        return f"- **Order expires:** {local_fmt(parse_iso(o['expires_at']), tz)} if nobody sells to us"
+    return f"- **Status:** {o['status']}"
+
+
 def _bought_block(conn, cfg: Config, o, tz: str) -> tuple[str, Decimal]:
     q, t, et = _market_bits(conn, o["slug"])
     qty = int(o["qty"])
     price = D(o["limit_price"]) or ZERO
-    cost = price * qty
-    lines = [f"**{trade_name(q, t, o['side'])}**", f"- **End time:** {local_fmt(et, tz)}", f"- **Bought:** {qty} contracts @ {cents(price)} ({money(cost)})", f"- **If it wins:** {signed_money((ONE - price) * qty)}", f"- **If it loses:** {signed_money(-cost)}"]
-    if o["status"] == "filled":
-        lines.append("- **Status:** filled")
-    elif o["status"] in ("open", "partially_filled", "submitted"):
-        lines.append(f"- **Order expires:** {local_fmt(parse_iso(o['expires_at']), tz)} if nobody sells to us")
-    else:
-        lines.append(f"- **Status:** {o['status']}")
-    return "\n".join(lines), cost
+    return "\n".join(_trade_lines(trade_name(q, t, o["side"]), et, tz, qty, price, _order_status_line(o, tz))), price * qty
 
 
 def _sold_block(conn, o, tz: str) -> tuple[str, Decimal, Decimal]:
@@ -119,20 +124,16 @@ def build_positions_card(conn: sqlite3.Connection, cfg: Config, settings: Settin
     blocks = []
     for p in all_rows(conn, "SELECT * FROM positions WHERE status = 'open' AND qty > 0 ORDER BY opened_at"):
         q, t, et = _market_bits(conn, p["slug"])
-        qty = int(p["qty"])
         entry = D(p["avg_cost"]) or ZERO
-        mark = D(p["mark_price"])
-        lines = [f"**{trade_name(q, t, p['side'])}**", f"- **End time:** {local_fmt(et, tz)}", f"- **Bought:** {qty} contracts @ {cents(entry)} ({money(entry * qty)})", f"- **If it wins:** {signed_money((ONE - entry) * qty)} · **If it loses:** {signed_money(-(entry * qty))}"]
-        if mark is not None:
-            lines.append(f"- **Now:** {cents(mark)} ({signed_money((mark - entry) * qty)})")
-        if p["take_profit_price"]:
-            lines.append(f"- **Sells at:** {cents(p['take_profit_price'])} profit / {cents(p['stop_loss_price'])} stop")
-        blocks.append("\n".join(lines))
+        status_line = "- **Status:** filled" + (f", sells at {cents(p['take_profit_price'])} profit / {cents(p['stop_loss_price'])} stop" if p["take_profit_price"] else "")
+        if p["mark_price"]:
+            status_line += f" · now {cents(p['mark_price'])} ({signed_money((D(p['mark_price']) - entry) * int(p['qty']))})"
+        blocks.append("\n".join(_trade_lines(trade_name(q, t, p["side"]), et, tz, int(p["qty"]), entry, status_line)))
     for o in all_rows(conn, "SELECT * FROM orders WHERE status IN ('open', 'partially_filled', 'submitted') AND intent IN (?, ?) ORDER BY created_at", BUY_INTENTS):
         q, t, et = _market_bits(conn, o["slug"])
         qty = int(o["qty"]) - int(o["filled_qty"] or 0)
         price = D(o["limit_price"]) or ZERO
-        blocks.append("\n".join([f"**{trade_name(q, t, o['side'])}**", f"- **End time:** {local_fmt(et, tz)}", f"- **Buying:** {qty} contracts @ {cents(price)} ({money(price * qty)}), waiting for a seller", f"- **Order expires:** {local_fmt(parse_iso(o['expires_at']), tz)}"]))
+        blocks.append("\n".join(_trade_lines(trade_name(q, t, o["side"]), et, tz, qty, price, _order_status_line(o, tz))))
     body = "\n\n".join(blocks) if blocks else "No open trades."
     return embed(f"Current Trades ({len(blocks)})", body, "blue", [_money_field(conn, settings, now)], footer=f"{settings.mode} · updated {local_fmt(now, tz)}")
 
