@@ -46,6 +46,9 @@ def test_stop_loss_sells(tmp_settings, cfg, conn, fake_client):
     broker, market = _buy_and_fill(tmp_settings, cfg, conn, fake_client)
     fake_client.bids = [("0.38", "100")]
     fake_client.asks = [("0.40", "100")]
+    first = manage_positions(tmp_settings, cfg, conn, fake_client, broker)
+    assert first == []
+    assert one(conn, "SELECT status FROM positions WHERE slug = 'test-market'")["status"] == "open"
     events = manage_positions(tmp_settings, cfg, conn, fake_client, broker)
     assert events and events[0]["type"] == "stop_loss"
     pos = one(conn, "SELECT * FROM positions WHERE slug = 'test-market' AND side = 'YES'")
@@ -70,3 +73,22 @@ def test_frozen_during_game(tmp_settings, cfg, conn, fake_client):
     events = manage_positions(tmp_settings, cfg, conn, fake_client, broker)
     assert events and events[0]["type"] == "frozen"
     assert one(conn, "SELECT status FROM positions WHERE slug = 'test-market'")["status"] == "open"
+
+
+def test_thin_book_blocks_selling(tmp_settings, cfg, conn, fake_client):
+    broker, market = _buy_and_fill(tmp_settings, cfg, conn, fake_client)
+    fake_client.bids = [("0.30", "100")]
+    fake_client.asks = [("0.70", "100")]
+    events = manage_positions(tmp_settings, cfg, conn, fake_client, broker)
+    assert events and events[0]["type"] == "thin_book"
+    assert one(conn, "SELECT status FROM positions WHERE slug = 'test-market'")["status"] == "open"
+
+
+def test_sports_futures_frozen_on_event_day(cfg):
+    from pm.models import MarketInfo
+    from pm.util import now_utc
+    now = now_utc()
+    m = MarketInfo(slug=f"tec-cup-final-{now.strftime('%Y-%m-%d')}-w-abc", category="sports", market_type="futures", end_date=now + timedelta(days=10))
+    assert m.frozen_at(now, 60)
+    later = MarketInfo(slug=f"tec-cup-final-{(now + timedelta(days=3)).strftime('%Y-%m-%d')}-w-abc", category="sports", market_type="futures", end_date=now + timedelta(days=10))
+    assert not later.frozen_at(now, 60)

@@ -107,10 +107,15 @@ class MarketInfo:
         return self.end_date
 
     def frozen_at(self, now: datetime, minutes_before: int = 60) -> bool:
-        if not self.is_game or self.resolved:
-            return False
         from datetime import timedelta
-        return now >= self.game_start_time - timedelta(minutes=minutes_before)
+        if self.resolved or self.category != "sports":
+            return False
+        if self.is_game:
+            return now >= self.game_start_time - timedelta(minutes=minutes_before)
+        sd = self.slug_date
+        if sd is not None:
+            return now >= sd.replace(hour=0, minute=0) - timedelta(minutes=minutes_before)
+        return False
 
 
 @dataclass

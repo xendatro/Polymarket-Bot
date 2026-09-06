@@ -41,6 +41,8 @@ exits:
   take_profit_price: 0.95
   stop_loss_cents: 0.20
   freeze_before_game_minutes: 60
+  max_spread_to_act: 0.06
+  stop_loss_confirmations: 2
 
 liquidity:
   displayed_size_multiple: 3

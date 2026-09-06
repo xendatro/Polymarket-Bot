@@ -28,7 +28,7 @@ def connect(path: Path | str, readonly: bool = False) -> sqlite3.Connection:
 
 def init_schema(conn: sqlite3.Connection, mode: str, starting_cash: Decimal | None = None) -> None:
     conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
-    for table, col, decl in (("markets", "game_start_time", "TEXT"), ("positions", "take_profit_price", "TEXT"), ("positions", "stop_loss_price", "TEXT")):
+    for table, col, decl in (("markets", "game_start_time", "TEXT"), ("positions", "take_profit_price", "TEXT"), ("positions", "stop_loss_price", "TEXT"), ("positions", "stop_hits", "INTEGER")):
         cols = {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
         if col not in cols:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {decl}")

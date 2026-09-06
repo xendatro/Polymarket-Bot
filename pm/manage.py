@@ -44,11 +44,22 @@ def manage_positions(settings: Settings, cfg: Config, conn: sqlite3.Connection, 
         if bid is None or bid <= ZERO:
             continue
         update(conn, "positions", {"slug": slug, "side": side}, {"mark_price": dstr(bid), "unrealized_pnl": dstr((bid - entry) * Decimal(int(p["qty"])), 6), "updated_at": iso(now)})
+        spread = (ask - bid) if ask is not None else None
+        if spread is None or spread > cfg.exits.max_spread_to_act:
+            events.append({"type": "thin_book", "slug": slug, "side": side, "spread": spread})
+            continue
+        hits = int(p["stop_hits"] or 0) if "stop_hits" in p.keys() else 0
         reason = None
         if bid >= take_profit:
             reason = "take_profit"
         elif bid <= stop_loss:
-            reason = "stop_loss"
+            hits += 1
+            update(conn, "positions", {"slug": slug, "side": side}, {"stop_hits": hits})
+            if hits >= cfg.exits.stop_loss_confirmations:
+                reason = "stop_loss"
+        else:
+            if hits:
+                update(conn, "positions", {"slug": slug, "side": side}, {"stop_hits": 0})
         if reason is None:
             continue
         text = f"{'Take profit' if reason == 'take_profit' else 'Stop loss'}: bought at {dstr(entry)}, bid now {dstr(bid)} (target {dstr(take_profit)}, stop {dstr(stop_loss)})"

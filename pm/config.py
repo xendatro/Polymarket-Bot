@@ -52,6 +52,8 @@ class ExitsCfg(BaseModel):
     take_profit_price: Decimal = Decimal("0.95")
     stop_loss_cents: Decimal = Decimal("0.20")
     freeze_before_game_minutes: int = 60
+    max_spread_to_act: Decimal = Decimal("0.06")
+    stop_loss_confirmations: int = 2
 
 
 class Liquidity(BaseModel):
