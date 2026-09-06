@@ -46,7 +46,7 @@ def _bought_block(conn, cfg: Config, o, tz: str) -> tuple[str, Decimal]:
     qty = int(o["qty"])
     price = D(o["limit_price"]) or ZERO
     cost = price * qty
-    lines = [f"**{trade_name(q, t, o['side'])}**", f"- **End time:** {local_fmt(et, tz)}", f"- **Bought:** {qty} contracts @ {cents(price)} ({money(cost)})", f"- **Est. profit:** {signed_money(cfg.favorites.bias * qty)} ({cents(cfg.favorites.bias)}/contract)"]
+    lines = [f"**{trade_name(q, t, o['side'])}**", f"- **End time:** {local_fmt(et, tz)}", f"- **Bought:** {qty} contracts @ {cents(price)} ({money(cost)})", f"- **If it wins:** {signed_money((ONE - price) * qty)}", f"- **If it loses:** {signed_money(-cost)}"]
     if o["status"] == "filled":
         lines.append("- **Status:** filled")
     elif o["status"] in ("open", "partially_filled", "submitted"):
@@ -122,7 +122,7 @@ def build_positions_card(conn: sqlite3.Connection, cfg: Config, settings: Settin
         qty = int(p["qty"])
         entry = D(p["avg_cost"]) or ZERO
         mark = D(p["mark_price"])
-        lines = [f"**{trade_name(q, t, p['side'])}**", f"- **End time:** {local_fmt(et, tz)}", f"- **Bought:** {qty} contracts @ {cents(entry)} ({money(entry * qty)})"]
+        lines = [f"**{trade_name(q, t, p['side'])}**", f"- **End time:** {local_fmt(et, tz)}", f"- **Bought:** {qty} contracts @ {cents(entry)} ({money(entry * qty)})", f"- **If it wins:** {signed_money((ONE - entry) * qty)} · **If it loses:** {signed_money(-(entry * qty))}"]
         if mark is not None:
             lines.append(f"- **Now:** {cents(mark)} ({signed_money((mark - entry) * qty)})")
         if p["take_profit_price"]:
