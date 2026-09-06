@@ -1,0 +1,83 @@
+run_interval_hours: 1
+poll_seconds: 60
+daily_report_time_local: "00:05"
+display_timezone: America/New_York
+
+max_new_orders_per_run: 5
+max_new_orders_per_day: 10
+max_open_positions: 5
+never_buy_above: 0.97
+
+portfolio:
+  invest_target_pct: 0.50
+  max_position_pct_of_total: 0.20
+  min_cash_usd: 1.00
+
+favorites:
+  price_min: 0.65
+  price_max: 0.90
+  bias: 0.025
+  max_spread: 0.04
+  min_open_interest: 300
+  oi_full: 2000
+  min_hours: 3
+  max_days: 7
+  fetch_window_days: 21
+  max_positions_per_category_pct: 0.6
+  max_per_event: 1
+  check_top_n: 80
+
+sizing:
+  kelly_switch_total: 50
+  kelly_multiplier: 0.5
+
+calibration:
+  prior_weight: 50
+  min_n_to_use: 30
+  price_bands: [0.65, 0.75, 0.85, 0.91]
+
+exits:
+  take_profit_cents: 0.08
+  take_profit_price: 0.95
+  stop_loss_cents: 0.20
+  freeze_before_game_minutes: 60
+
+liquidity:
+  displayed_size_multiple: 3
+
+order_defaults:
+  type: limit
+  post_only: true
+  tif: GTD
+  gtd_hours: 3
+  price_rule: best_bid_plus_tick
+
+daily_loss_stop_pct: 0.25
+loss_cooldown_hours: 6
+halt_after_losses:
+  count: 5
+  window_days: 7
+
+no_trade_categories: [crypto]
+no_trade_market_types: []
+
+maintenance_window_et:
+  weekday: 3
+  start: "02:00"
+  end: "06:00"
+
+claude:
+  model: opus
+  max_calls_per_day: 60
+  query_max_turns: 10
+  timeout_seconds: 300
+  quiet_hours_local: []
+
+scan:
+  max_markets: 1500
+  categories: [politics, geopolitics, macro, science, culture, finance, sports]
+
+paper:
+  starting_cash: 10.00
+  maker_fill_fraction: 0.5
+  max_slippage: 0.02

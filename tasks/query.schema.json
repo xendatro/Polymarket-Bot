@@ -1,0 +1,26 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["reply", "proposal"],
+  "properties": {
+    "reply": {"type": "string", "maxLength": 1800},
+    "proposal": {
+      "anyOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["slug", "side", "action", "price", "qty", "rationale"],
+          "properties": {
+            "slug": {"type": "string"},
+            "side": {"type": "string", "enum": ["YES", "NO"]},
+            "action": {"type": "string", "enum": ["buy", "sell"]},
+            "price": {"type": "number", "minimum": 0.001, "maximum": 0.999},
+            "qty": {"type": "integer", "minimum": 1, "maximum": 50},
+            "rationale": {"type": "string", "maxLength": 500}
+          }
+        }
+      ]
+    }
+  }
+}

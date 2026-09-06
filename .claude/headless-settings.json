@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch",
+      "Bash(python -m scripts.ro.*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(**/*.db)",
+      "Read(**/*.db-wal)",
+      "Read(./data/**)",
+      "Edit",
+      "Write",
+      "MultiEdit",
+      "NotebookEdit",
+      "Agent"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard_bash.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

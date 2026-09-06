@@ -1,0 +1,16 @@
+.env
+.venv/
+data/
+*.db
+*.db-wal
+*.db-shm
+logs/
+runs/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+.claude/settings.local.json
+ask/.claude/settings.local.json

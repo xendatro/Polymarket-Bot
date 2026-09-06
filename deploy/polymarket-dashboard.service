@@ -1,0 +1,15 @@
+[Unit]
+Description=Polymarket agent Streamlit dashboard
+After=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=__REPO__
+EnvironmentFile=__REPO__/.env
+ExecStart=__REPO__/.venv/bin/python -m streamlit run dashboard/app.py --server.address 0.0.0.0 --server.port 8501 --server.headless true
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target
